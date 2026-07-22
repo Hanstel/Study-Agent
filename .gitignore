@@ -1,0 +1,5 @@
+# Local secrets and tokens
+令牌.txt
+.env
+.env.*
+*.local
