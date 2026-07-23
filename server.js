@@ -8,6 +8,43 @@ const __dirname = dirname(__filename);
 const publicDir = resolve(__dirname, 'public');
 const port = Number(process.env.PORT || 3000);
 
+async function loadLocalToken() {
+  const envPath = join(__dirname, '.env');
+  try {
+    const envText = await readFile(envPath, 'utf8');
+    for (const line of envText.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith('#')) {
+        continue;
+      }
+      const [key, ...rest] = trimmed.split('=');
+      if (!key) {
+        continue;
+      }
+      const value = rest.join('=').trim();
+      if (value && process.env[key] === undefined) {
+        process.env[key] = value;
+      }
+    }
+  } catch {
+    // ignore missing .env
+  }
+
+  if (!process.env.COZE_BEARER_TOKEN) {
+    const tokenFile = join(__dirname, '令牌.txt');
+    try {
+      const token = (await readFile(tokenFile, 'utf8')).trim();
+      if (token) {
+        process.env.COZE_BEARER_TOKEN = token;
+      }
+    } catch {
+      // ignore missing token file
+    }
+  }
+}
+
+await loadLocalToken();
+
 const mimeTypes = {
   '.html': 'text/html; charset=utf-8',
   '.css': 'text/css; charset=utf-8',
