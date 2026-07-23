@@ -39,8 +39,55 @@ h1, h2, h3, p { margin: 0; }
 .pill {
   padding: 8px 12px; border-radius: 999px; background: rgba(94, 231, 217, 0.16); color: var(--accent); font-size: 0.95rem;
 }
+.workspace-layout {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 280px 1fr;
+}
 .workspace {
   display: grid; gap: 20px; grid-template-columns: 1.4fr 0.9fr 0.9fr;
+}
+.sidebar {
+  background: rgba(16, 27, 47, 0.9);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 140px);
+}
+.sidebar-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.conversation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: auto;
+}
+.conversation-item {
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+.conversation-item.selected {
+  border-color: rgba(94, 231, 217, 0.5);
+  background: rgba(94, 231, 217, 0.08);
+}
+.conversation-item h3 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+}
+.conversation-item p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
 }
 .card {
   background: rgba(16, 27, 47, 0.9);

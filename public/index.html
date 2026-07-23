@@ -16,42 +16,55 @@
         <div class="pill" id="statusPill">准备就绪</div>
       </header>
 
-      <main class="workspace">
-        <section class="card chat-card">
-          <div class="card-header">
-            <h2>对话区</h2>
-            <p>与智能体进行流式对话，协议指令会自动触发页面动作。</p>
-          </div>
-          <div class="messages" id="messages"></div>
-          <form class="composer" id="composer">
-            <input id="messageInput" placeholder="请输入你的学习目标或任务提示…" autocomplete="off" />
-            <button type="submit">发送</button>
-          </form>
-        </section>
-
-        <section class="card focus-card">
-          <div class="card-header">
-            <h2>沉浸区</h2>
-            <p>通过倒计时、全屏与环境音构建专注体验。</p>
-          </div>
-          <div class="focus-panel">
-            <div class="timer" id="timerDisplay">25:00</div>
-            <div class="focus-actions">
-              <button class="secondary" id="startTimerBtn">开始 25 分钟</button>
-              <button class="secondary" id="microStepBtn">开始 5 分钟微步骤</button>
+      <div class="workspace-layout">
+        <aside class="sidebar">
+          <div class="sidebar-header">
+            <div>
+              <h2>对话历史</h2>
+              <p>左侧切换会话，右侧继续当前对话。</p>
             </div>
-            <div class="focus-meta" id="focusMeta">当前任务：空闲中</div>
+            <button class="secondary" id="newConversationBtn">+ 新建</button>
           </div>
-        </section>
+          <div class="conversation-list" id="conversationList"></div>
+        </aside>
 
-        <section class="card render-card">
-          <div class="card-header">
-            <h2>任务与成就</h2>
-            <p>Agent 生成的待办与勋章会在这里被动态渲染。</p>
-          </div>
-          <div class="todo-list" id="todoList"></div>
-        </section>
-      </main>
+        <main class="workspace">
+          <section class="card chat-card">
+            <div class="card-header">
+              <h2>对话区</h2>
+              <p>与智能体进行流式对话，协议指令会自动触发页面动作。</p>
+            </div>
+            <div class="messages" id="messages"></div>
+            <form class="composer" id="composer">
+              <input id="messageInput" placeholder="请输入你的学习目标或任务提示…" autocomplete="off" />
+              <button type="submit">发送</button>
+            </form>
+          </section>
+
+          <section class="card focus-card">
+            <div class="card-header">
+              <h2>沉浸区</h2>
+              <p>通过倒计时、全屏与环境音构建专注体验。</p>
+            </div>
+            <div class="focus-panel">
+              <div class="timer" id="timerDisplay">25:00</div>
+              <div class="focus-actions">
+                <button class="secondary" id="startTimerBtn">开始 25 分钟</button>
+                <button class="secondary" id="microStepBtn">开始 5 分钟微步骤</button>
+              </div>
+              <div class="focus-meta" id="focusMeta">当前任务：空闲中</div>
+            </div>
+          </section>
+
+          <section class="card render-card">
+            <div class="card-header">
+              <h2>任务与成就</h2>
+              <p>Agent 生成的待办与勋章会在这里被动态渲染。</p>
+            </div>
+            <div class="todo-list" id="todoList"></div>
+          </section>
+        </main>
+      </div>
     </div>
 
     <div class="modal hidden" id="awardModal">

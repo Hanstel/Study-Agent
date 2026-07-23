@@ -79,23 +79,21 @@ async function readRequestBody(req) {
   }
 }
 
-function buildCozePayload(message, sessionId, projectId) {
+function buildCozePayload(message, conversationId, botId, userId) {
   return {
-    content: {
-      query: {
-        prompt: [{ type: 'text', content: { text: message } }]
-      }
-    },
-    type: 'query',
-    session_id: sessionId,
-    project_id: projectId
+    bot_id: botId,
+    conversation_id: conversationId,
+    user_id: userId,
+    query: message,
+    stream: true
   };
 }
 
 async function handleCozeStream(req, res, body) {
   const message = body?.message || '请给我一个 25 分钟的沉浸式学习计划。';
-  const sessionId = body?.session_id || process.env.COZE_SESSION_ID || '0krHqkB4ygbq2bbZ1z6Oa';
-  const projectId = body?.project_id || process.env.COZE_PROJECT_ID || '7665321232279011382';
+  const conversationId = body?.conversation_id || process.env.COZE_CONVERSATION_ID || `conv_${Date.now()}`;
+  const botId = body?.bot_id || process.env.COZE_BOT_ID || 'YOUR_BOT_ID';
+  const userId = body?.user_id || process.env.COZE_USER_ID || 'local_user_01';
   const token = process.env.COZE_BEARER_TOKEN;
   const useMock = body?.use_mock || process.env.COZE_USE_MOCK === 'true';
 
@@ -148,7 +146,7 @@ async function handleCozeStream(req, res, body) {
       'Content-Type': 'application/json',
       Accept: 'text/event-stream'
     },
-    body: JSON.stringify(buildCozePayload(message, sessionId, projectId))
+    body: JSON.stringify(buildCozePayload(message, conversationId, botId, userId))
   });
 
   if (!response.ok) {

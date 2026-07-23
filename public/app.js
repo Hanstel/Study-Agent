@@ -11,6 +11,8 @@ const awardTitle = document.getElementById('awardTitle');
 const awardMessage = document.getElementById('awardMessage');
 const closeAwardBtn = document.getElementById('closeAwardBtn');
 const statusPill = document.getElementById('statusPill');
+const conversationList = document.getElementById('conversationList');
+const newConversationBtn = document.getElementById('newConversationBtn');
 
 let timerId = null;
 let timerSeconds = 25 * 60;
@@ -19,6 +21,11 @@ let ambientAudioCtx = null;
 let ambientGain = null;
 let visibilityTimer = null;
 let focusModeEnabled = false;
+let conversations = [];
+let currentConversationId = null;
+const STORAGE_KEY = 'study_agent_conversations';
+const CURRENT_CONVERSATION_KEY = 'study_agent_current_conversation';
+const DEFAULT_BOT_ID = 'YOUR_BOT_ID';
 
 function addMessage(role, text) {
   const bubble = document.createElement('div');
@@ -141,6 +148,9 @@ function executeClientAction(action, payload = {}) {
     case 'TRIGGER_AWARD':
       showAwardModal(payload.badge_title, payload.message);
       break;
+    case 'RESET_CONTEXT':
+      resetContext();
+      break;
     default:
       break;
   }
@@ -162,7 +172,7 @@ function parseAgentAction(responseText) {
 }
 
 function streamAssistantReply(inputText) {
-  addMessage('user', inputText);
+  appendMessageToConversation('user', inputText);
   setStatus('正在流式回复…');
   const assistantBubble = document.createElement('div');
   assistantBubble.className = 'message assistant';
@@ -173,7 +183,12 @@ function streamAssistantReply(inputText) {
   fetch('/api/coze/stream', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ message: inputText })
+    body: JSON.stringify({
+      message: inputText,
+      bot_id: DEFAULT_BOT_ID,
+      conversation_id: currentConversationId,
+      user_id: 'local_user_01'
+    })
   })
     .then(async (response) => {
       if (!response.ok) {
@@ -258,7 +273,13 @@ function streamAssistantReply(inputText) {
       }
 
       const cleanedText = parseAgentAction(fullText.trim());
-      assistantBubble.textContent = cleanedText || fullText.trim() || '已收到你的请求。';
+      const finalText = cleanedText || fullText.trim() || '已收到你的请求。';
+      assistantBubble.textContent = finalText;
+      const conversation = getCurrentConversation();
+      if (conversation) {
+        conversation.messages.push({ role: 'assistant', text: finalText, createdAt: new Date().toISOString() });
+        saveConversations();
+      }
       setStatus('回复完成');
     })
     .catch((error) => {
@@ -276,6 +297,12 @@ composer.addEventListener('submit', (event) => {
   }
   input.value = '';
   streamAssistantReply(text);
+});
+
+newConversationBtn.addEventListener('click', () => {
+  const conversation = createConversation();
+  setCurrentConversation(conversation.id);
+  resetContext();
 });
 
 startTimerBtn.addEventListener('click', () => {
@@ -309,6 +336,151 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
+function generateConversationId() {
+  if (window.crypto?.randomUUID) {
+    return `conv_${window.crypto.randomUUID().replace(/-/g, '')}`;
+  }
+  return `conv_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+}
+
+function formatTimestamp(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day} ${hours}:${minutes}`;
+}
+
+function createConversation() {
+  const conversation = {
+    id: generateConversationId(),
+    title: '新对话',
+    createdAt: formatTimestamp(),
+    messages: []
+  };
+  conversations.unshift(conversation);
+  saveConversations();
+  renderConversationList();
+  return conversation;
+}
+
+function loadConversations() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+    if (Array.isArray(saved) && saved.length) {
+      conversations = saved;
+      return;
+    }
+  } catch {
+    // ignore invalid storage
+  }
+  conversations = [
+    {
+      id: generateConversationId(),
+      title: '新对话',
+      createdAt: formatTimestamp(),
+      messages: []
+    }
+  ];
+  saveConversations();
+}
+
+function loadCurrentConversationId() {
+  const savedId = localStorage.getItem(CURRENT_CONVERSATION_KEY);
+  if (savedId && conversations.some((item) => item.id === savedId)) {
+    currentConversationId = savedId;
+  } else {
+    currentConversationId = conversations[0].id;
+  }
+}
+
+function saveConversations() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+}
+
+function getCurrentConversation() {
+  const conversation = conversations.find((item) => item.id === currentConversationId);
+  if (conversation) {
+    return conversation;
+  }
+  return conversations[0];
+}
+
+function renderConversationList() {
+  conversationList.innerHTML = '';
+  conversations.forEach((conversation) => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = `conversation-item${conversation.id === currentConversationId ? ' selected' : ''}`;
+    item.innerHTML = `<h3>${conversation.title}</h3><p>${conversation.createdAt}</p>`;
+    item.addEventListener('click', () => {
+      setCurrentConversation(conversation.id);
+    });
+    conversationList.appendChild(item);
+  });
+}
+
+function renderMessages() {
+  const conversation = getCurrentConversation();
+  messageList.innerHTML = '';
+  conversation.messages.forEach((message) => {
+    addMessage(message.role, message.text);
+  });
+}
+
+function setCurrentConversation(conversationId) {
+  currentConversationId = conversationId;
+  localStorage.setItem(CURRENT_CONVERSATION_KEY, conversationId);
+  renderConversationList();
+  renderMessages();
+  const conversation = getCurrentConversation();
+  setStatus(`当前会话：${conversation.title}`);
+}
+
+function appendMessageToConversation(role, text) {
+  const conversation = getCurrentConversation();
+  if (!conversation) {
+    return;
+  }
+  if (role === 'user' && conversation.messages.length === 0 && conversation.title === '新对话') {
+    conversation.title = text.slice(0, 20);
+  }
+  conversation.messages.push({ role, text, createdAt: new Date().toISOString() });
+  saveConversations();
+  if (role === 'user') {
+    renderConversationList();
+  }
+  addMessage(role, text);
+}
+
+function stopAmbientAudio() {
+  if (ambientAudioCtx) {
+    ambientAudioCtx.close().catch(() => {});
+    ambientAudioCtx = null;
+    ambientGain = null;
+  }
+}
+
+function resetContext() {
+  if (timerId) {
+    clearInterval(timerId);
+    timerId = null;
+  }
+  timerSeconds = 25 * 60;
+  timerTaskName = '专注时段';
+  updateTimerDisplay();
+  renderTodoList([]);
+  document.body.classList.remove('focus-mode');
+  focusModeEnabled = false;
+  stopAmbientAudio();
+  awardModal.classList.add('hidden');
+  setStatus('当前上下文已重置');
+}
+
+loadConversations();
+loadCurrentConversationId();
+setCurrentConversation(getCurrentConversation().id);
 updateTimerDisplay();
 renderTodoList([{ title: '准备学习目标', done: false }, { title: '启动专注时段', done: false }]);
 setStatus('准备就绪');
