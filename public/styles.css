@@ -34,6 +34,11 @@ body.focus-mode .card, body.focus-mode .topbar {
   border-radius: 20px;
   backdrop-filter: blur(12px);
 }
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
 .eyebrow { text-transform: uppercase; letter-spacing: 0.25em; font-size: 0.75rem; color: var(--accent); margin: 0 0 6px; }
 h1, h2, h3, p { margin: 0; }
 .pill {
@@ -97,9 +102,18 @@ h1, h2, h3, p { margin: 0; }
 .card-header { margin-bottom: 12px; }
 .card-header p { font-size: 0.95rem; margin-top: 6px; color: var(--muted); }
 .messages {
-  flex: 1; overflow: auto; display: flex; flex-direction: column; gap: 12px; padding-right: 4px; margin-bottom: 12px;
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 4px;
+  margin-bottom: 12px;
+  max-height: 56vh;
 }
-.message { max-width: 85%; padding: 12px 14px; border-radius: 14px; line-height: 1.5; white-space: pre-wrap; }
+.message { max-width: 85%; padding: 12px 14px; border-radius: 14px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+.message code { background: rgba(94, 231, 217, 0.12); color: #dff3ff; padding: 2px 6px; border-radius: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; }
+.message pre { background: rgba(255, 255, 255, 0.06); padding: 14px; border-radius: 14px; overflow-x: auto; margin: 0; }
 .message.user { align-self: flex-end; background: linear-gradient(135deg, var(--accent-2), #4f8cff); }
 .message.assistant { align-self: flex-start; background: var(--panel-2); color: #eef5ff; }
 .composer { display: flex; gap: 10px; }
@@ -111,6 +125,7 @@ button {
 }
 button.secondary { background: rgba(255,255,255,0.08); color: var(--text); }
 .timer { font-size: 3.6rem; font-weight: 800; text-align: center; margin-bottom: 16px; }
+.message.assistant, .message.user { overflow-wrap: anywhere; }
 .focus-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
 .focus-meta { color: var(--muted); }
 .todo-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
@@ -121,9 +136,27 @@ button.secondary { background: rgba(255,255,255,0.08); color: var(--text); }
 .modal.hidden { display: none; }
 .modal-card { background: var(--panel); padding: 24px; border-radius: 18px; min-width: 340px; text-align: center; box-shadow: 0 20px 70px rgba(0,0,0,0.35); }
 .modal-card p { margin: 10px 0 16px; color: var(--muted); }
+.login-card input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06);
+  color: var(--text);
+  margin-bottom: 14px;
+}
+.login-actions {
+  display: flex;
+  justify-content: center;
+}
+.login-card button {
+  width: 100%;
+}
 .confetti-piece { position: fixed; width: 8px; height: 16px; border-radius: 999px; pointer-events: none; animation: fall 1.2s ease-out forwards; }
 @keyframes fall { from { transform: translateY(0) rotate(0deg); opacity: 1; } to { transform: translateY(120vh) rotate(720deg); opacity: 0; } }
 @media (max-width: 1080px) {
+  .workspace-layout { grid-template-columns: 1fr; }
   .workspace { grid-template-columns: 1fr; }
+  .sidebar { min-height: auto; }
   .app-shell { padding: 16px; }
 }

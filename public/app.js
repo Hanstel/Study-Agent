@@ -13,6 +13,10 @@ const closeAwardBtn = document.getElementById('closeAwardBtn');
 const statusPill = document.getElementById('statusPill');
 const conversationList = document.getElementById('conversationList');
 const newConversationBtn = document.getElementById('newConversationBtn');
+const loginBtn = document.getElementById('loginBtn');
+const loginModal = document.getElementById('loginModal');
+const loginForm = document.getElementById('loginForm');
+const usernameInput = document.getElementById('usernameInput');
 
 let timerId = null;
 let timerSeconds = 25 * 60;
@@ -23,16 +27,34 @@ let visibilityTimer = null;
 let focusModeEnabled = false;
 let conversations = [];
 let currentConversationId = null;
+let currentUser = localStorage.getItem('study_agent_username') || 'guest';
 const STORAGE_KEY = 'study_agent_conversations';
 const CURRENT_CONVERSATION_KEY = 'study_agent_current_conversation';
+const USERNAME_KEY = 'study_agent_username';
 const DEFAULT_BOT_ID = 'YOUR_BOT_ID';
 
 function addMessage(role, text) {
   const bubble = document.createElement('div');
   bubble.className = `message ${role}`;
-  bubble.textContent = text;
+  bubble.innerHTML = sanitizeMessageText(text);
   messageList.appendChild(bubble);
   messageList.scrollTop = messageList.scrollHeight;
+}
+
+function sanitizeMessageText(text) {
+  const escaped = text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  return escaped
+    .replace(/```json([\s\S]*?)```/g, (_, code) => {
+      return `<pre><code>${code.trim()}</code></pre>`;
+    })
+    .replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+
+function stripJsonBlocks(text) {
+  return text.replace(/```json([\s\S]*?)```/g, '').trim();
 }
 
 function setStatus(text) {
@@ -187,7 +209,7 @@ function streamAssistantReply(inputText) {
       message: inputText,
       bot_id: DEFAULT_BOT_ID,
       conversation_id: currentConversationId,
-      user_id: 'local_user_01'
+      user_id: currentUser
     })
   })
     .then(async (response) => {
@@ -272,9 +294,10 @@ function streamAssistantReply(inputText) {
         }
       }
 
-      const cleanedText = parseAgentAction(fullText.trim());
-      const finalText = cleanedText || fullText.trim() || '已收到你的请求。';
-      assistantBubble.textContent = finalText;
+      const rawText = fullText.trim();
+      const cleanedText = parseAgentAction(rawText);
+      const finalText = cleanedText || stripJsonBlocks(rawText) || '已收到你的请求。';
+      assistantBubble.innerHTML = sanitizeMessageText(finalText);
       const conversation = getCurrentConversation();
       if (conversation) {
         conversation.messages.push({ role: 'assistant', text: finalText, createdAt: new Date().toISOString() });
@@ -323,6 +346,31 @@ awardModal.addEventListener('click', (event) => {
   }
 });
 
+loginBtn.addEventListener('click', () => {
+  loginModal.classList.remove('hidden');
+});
+
+loginForm.addEventListener('submit', (event) => {
+  event.preventDefault();
+  const username = usernameInput.value.trim();
+  if (!username) {
+    return;
+  }
+  currentUser = username;
+  localStorage.setItem(USERNAME_KEY, username);
+  loginModal.classList.add('hidden');
+  loadConversations();
+  loadCurrentConversationId();
+  setCurrentConversation(getCurrentConversation().id);
+  setStatus(`已登录：${username}`);
+});
+
+loginModal.addEventListener('click', (event) => {
+  if (event.target === loginModal) {
+    loginModal.classList.add('hidden');
+  }
+});
+
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
     visibilityTimer = window.setTimeout(() => {
@@ -367,7 +415,7 @@ function createConversation() {
 
 function loadConversations() {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+    const saved = JSON.parse(localStorage.getItem(getStorageKey()) || 'null');
     if (Array.isArray(saved) && saved.length) {
       conversations = saved;
       return;
@@ -387,7 +435,7 @@ function loadConversations() {
 }
 
 function loadCurrentConversationId() {
-  const savedId = localStorage.getItem(CURRENT_CONVERSATION_KEY);
+  const savedId = localStorage.getItem(getConversationKey());
   if (savedId && conversations.some((item) => item.id === savedId)) {
     currentConversationId = savedId;
   } else {
@@ -396,7 +444,7 @@ function loadCurrentConversationId() {
 }
 
 function saveConversations() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+  localStorage.setItem(getStorageKey(), JSON.stringify(conversations));
 }
 
 function getCurrentConversation() {
@@ -431,7 +479,7 @@ function renderMessages() {
 
 function setCurrentConversation(conversationId) {
   currentConversationId = conversationId;
-  localStorage.setItem(CURRENT_CONVERSATION_KEY, conversationId);
+  localStorage.setItem(getConversationKey(), conversationId);
   renderConversationList();
   renderMessages();
   const conversation = getCurrentConversation();
@@ -462,6 +510,14 @@ function stopAmbientAudio() {
   }
 }
 
+function getStorageKey() {
+  return `${STORAGE_KEY}:${currentUser}`;
+}
+
+function getConversationKey() {
+  return `${CURRENT_CONVERSATION_KEY}:${currentUser}`;
+}
+
 function resetContext() {
   if (timerId) {
     clearInterval(timerId);
@@ -484,3 +540,7 @@ setCurrentConversation(getCurrentConversation().id);
 updateTimerDisplay();
 renderTodoList([{ title: '准备学习目标', done: false }, { title: '启动专注时段', done: false }]);
 setStatus('准备就绪');
+
+if (!currentUser || currentUser === 'guest') {
+  loginModal.classList.remove('hidden');
+}

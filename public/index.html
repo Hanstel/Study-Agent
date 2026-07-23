@@ -13,7 +13,10 @@
           <p class="eyebrow">Study Agent</p>
           <h1>自律学习助手</h1>
         </div>
-        <div class="pill" id="statusPill">准备就绪</div>
+        <div class="topbar-actions">
+          <button class="secondary" id="loginBtn">登录</button>
+          <div class="pill" id="statusPill">准备就绪</div>
+        </div>
       </header>
 
       <div class="workspace-layout">
@@ -72,6 +75,19 @@
         <h3 id="awardTitle">成就解锁</h3>
         <p id="awardMessage">你已经完成了第一个专注回合。</p>
         <button id="closeAwardBtn">关闭</button>
+      </div>
+    </div>
+
+    <div class="modal hidden" id="loginModal">
+      <div class="modal-card login-card">
+        <h3>登录保存历史</h3>
+        <p>请输入用户名，历史对话将保存在本地浏览器。</p>
+        <form id="loginForm">
+          <input id="usernameInput" placeholder="用户名" autocomplete="off" />
+          <div class="login-actions">
+            <button type="submit">登录</button>
+          </div>
+        </form>
       </div>
     </div>
 
